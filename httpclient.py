@@ -34,7 +34,19 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
     def get_host_port(self,url):
-        
+        parse_result = urllib.parse.urlparse(url)
+        #print(url, '\n', parse_result)
+        print("debug", parse_result.hostname, parse_result.path, parse_result.port)
+        if parse_result.hostname == None:
+            raise Exception('No hostname found')
+        else:
+            self.host = parse_result.hostname
+
+        if parse_result.port == None:
+            self.port = 80
+        else:
+            self.port = int(parse_result.port)
+        return None
 
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -91,6 +103,8 @@ if __name__ == "__main__":
         help()
         sys.exit(1)
     elif (len(sys.argv) == 3):
+        print("Client: ", sys.argv)
+        client.get_host_port(sys.argv[2])
         print(client.command( sys.argv[2], sys.argv[1] ))
     else:
         print(client.command( sys.argv[1] ))
