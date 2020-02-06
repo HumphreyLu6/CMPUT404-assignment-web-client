@@ -18,6 +18,9 @@
 # Write your own HTTP GET and POST
 # The point is to understand what you have to send and get experience with it
 
+# Reference: https://stackoverflow.com/questions/21628852/changing-hostname-in-a-url
+# Answered by Nigel Tufnel on Feb 7 '14 at 13:34, Edit by Nigel Tufnel on Mar 11 '19 at 16:34
+
 import sys
 import socket
 import re
@@ -25,7 +28,6 @@ import re
 # you may use urllib to encode data appropriately
 import urllib.parse
 
-# https://stackoverflow.com/questions/21628852/changing-hostname-in-a-url
 def help():
     print("httpclient.py [GET/POST] [URL]\n")
 
@@ -34,10 +36,6 @@ class HTTPResponse(object):
     def __init__(self, code=200, body=""):
         self.code = code
         self.body = body
-
-
-UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
-
 
 class HTTPClient(object):
     def parse_url(self, url):
@@ -64,8 +62,8 @@ class HTTPClient(object):
         self.socket.connect((host, port))
         return None
 
-    def get_code(self, data):
-        lines = data.splitlines()
+    def get_code(self, header):
+        lines = header.splitlines()
         code = int(lines[0].split(" ")[1])
         return code
 
@@ -97,14 +95,15 @@ class HTTPClient(object):
 
     def GET(self, url, args=None):
         self.parse_url(url)
-        request = "GET {0} HTTP/1.1\r\nUser-Agent:{2}\r\nHost:{1}\r\nConnection:close\r\n\r\n".format(
-            self.url_pr.path, self.url_pr.hostname, UserAgent
+        request = "GET {0} HTTP/1.1\r\nHost:{1}\r\nConnection:close\r\n\r\n".format(
+            self.url_pr.path, self.url_pr.hostname
         )
 
         self.connect(self.url_pr.hostname, self.url_pr.port)
 
         self.sendall(request)
         data = self.recvall(self.socket)
+        print(data)
         self.close()
 
         self.headers = self.get_headers(data)
@@ -117,7 +116,15 @@ class HTTPClient(object):
         self.parse_url(url)
         if args == None:
             args = ""
-        encoded_string = urllib.parse.urlencode(args)
+
+        encoded_string = None
+        try:
+            encoded_string = urllib.parse.urlencode(args)
+        except TypeError:
+            encoded_string = urllib.parse.quote_plus(args)
+        finally:
+            if encoded_string == None:
+                encoded_string = urllib.parse.urlencode("")
         request = (
             "POST {0} HTTP/1.1\r\n"
             "Host: {1}\r\n"
@@ -134,6 +141,7 @@ class HTTPClient(object):
         self.connect(self.url_pr.hostname, self.url_pr.port)
         self.sendall(request)
         data = self.recvall(self.socket)
+        print(data)
         self.close()
 
         self.headers = self.get_headers(data)
